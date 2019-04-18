@@ -1,0 +1,21 @@
+function aks (int n > 1)
+	if n is a perfect power
+		return composite
+
+	find smallest r such that ord_r(n) > (log2(n))^2
+		r and n must be coprime
+
+	for int a [2 .. min(r, n-1)]:
+		check that a does not divide n
+		if a divides n:
+			return composite
+
+	if n <= r:
+		return prime
+
+
+	for int a [1 .. floor( sqrt(eulerphi(r)) * log2(n))]:
+		if (X + a)^n != X^n + a (mod X^r - 1, n):
+			return composite
+
+	return prime
