@@ -55,12 +55,14 @@ int aks_prime(int testval){
 	// if so, it will be composite.
 	// if not, then we will keep testing it further
 	printf("Testing if %d is a perfect power\n", testval);
-	double a;
+	double base;
 	for(int b = 2; b <= log2(testval); b++){
-		a = pow(testval, 1.0/b);
+		base = pow(testval, 1.0/b);
 
-		if(is_whole(a)){
-			printf("Input %d is a perfect power (%d^%d), therefore it is composite.\n", testval, (int)a, b);
+		if(is_whole(base)){
+			printf("Input %d is a perfect power (%d^%d), therefore it is composite.\n", testval, (int)base, b);
+			
+			// return composite
 			return 0;
 		}
 
@@ -80,7 +82,7 @@ int aks_prime(int testval){
 		maxr = (int) ceil( pow( log2(testval), 5 ) );
 
 	}
-	printf("%d\n", maxr);
+
 	// tells us when to stop counting
 	int nextR = 1;
 	// increment r by one each time
@@ -101,7 +103,36 @@ int aks_prime(int testval){
 
 	printf("Found r value %d for the input value %d\n", r, testval);
 
+	// a is the minimum of r and n-1
+	int a = r;
+	if(testval-1 < r){
+		a = testval-1;
+	}
+
+	for( ; a > 1; a--){
+		int g = GCD(testval, a);
+		if(g > 1 &&  g < testval){
+			printf("Input value %d is divisible by value %d and 2 <= %d <= min(r, testval-1), so %d is composite\n", testval, a, a, testval);
+
+			// return composite
+			return 0;
+		}
+	}
+
+	printf("Did not find value a where 2 <= a <= min(r, testval-1) that divides input value %d\n", testval);
+
+	if(testval <= r){
+		printf("Input value %d is less than or equal to r (%d), therefore %d is prime\n", testval, r, testval);
+
+		// return prime
+		return 1;
+	}
+
+	printf("Input value %d is not less than or equal to r value of %d\n", testval, r);	
+
 	
 
+
+	// return prime
 	return 1;
 }
