@@ -4,6 +4,16 @@
 #include "aks.h"
 
 
+int phi(unsigned int n) 
+{ 
+    unsigned int result = 1; 
+    for (int i = 2; i < n; i++) 
+        if (gcd(i, n) == 1) 
+            result++; 
+    return result; 
+} 
+
+
 int ord(int a, int n){
     if (GCD(a, n) != 1) 
     	return -1; 
@@ -130,7 +140,9 @@ int aks_prime(int testval){
 
 	printf("Input value %d is not less than or equal to r value of %d\n", testval, r);	
 
-	
+
+	// time for the last part using polynomials
+
 
 
 	// return prime

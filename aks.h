@@ -3,6 +3,14 @@
 
 
 /**
+ * calculates the Euler phi of a given number
+ * this is used during the AKS primality test
+ *
+ */
+int phi(unsigned int n);
+
+
+/**
  * calculate the multiplicative order ord_n(a)
  * output: returns the number k where a^k === 1 (mod n), or returns -1 if such a k does not exist
  * 
