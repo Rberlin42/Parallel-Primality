@@ -3,6 +3,20 @@
 
 
 /**
+ * calculate the multiplicative order ord_n(a)
+ * output: returns the number k where a^k === 1 (mod n), or returns -1 if such a k does not exist
+ * 
+ */
+int ord(int a, int n);
+
+/**
+ * calculate the GCD of a and b
+ *
+ */
+int GCD(int a, int b);
+
+
+/**
  * tells us whether the input is a whole number; i.e. has no fractional part
  * input: the number we are testing, type double
  * output: 1 if it is whole, 0 if there is any fractional component

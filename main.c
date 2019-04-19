@@ -5,9 +5,17 @@
 #include "aks.h"
 
 int main(int argc, char* argv[]){
-	int isprime = aks_prime(36);
+	int testval = 31;
+	
+	int isprime = aks_prime(testval);
+	
+	if(isprime){
+		printf("AKS test ran on %d, found to be prime\n", testval);
+	}
+	else{
+		printf("AKS test ran on %d, found to be composite\n", testval);
+	}
 
-	printf("%d\n", isprime);
 
 	return 0;
 }
