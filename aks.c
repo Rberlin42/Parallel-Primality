@@ -190,24 +190,32 @@ int aks_prime(int testval){
 
 	int polymax = (int) floor(sqrt(phi(r)) * log2(testval));
 	for(int c = 1; c <= polymax; c++){
-		long long* poly;
-		poly = calloc(testval + 1, sizeof(long long));
-		// we need to raise (X + c) to the testval power
-		polyPower(c, testval, poly);
-
-		if(c >= 1){
-			printf("array for c = %d: ",c);
-			for(int term = testval; term >= 0; term--){
-				printf("%lld x^%d + ", poly[term], term);
-			}
-			printf("\n");
+		double polymod = (pow(c,testval) - c) / (double)testval;
+		printf("c=%d, %d^%d=%f...... final modulus=%f\n", c, c, testval, pow(c,testval), polymod);
+		if(polymod != floor(polymod)){
+			// return composite
+			return 0;
 		}
+
+		
+		// long long* poly;
+		// poly = calloc(testval + 1, sizeof(long long));
+		// we need to raise (X + c) to the testval power
+		// polyPower(c, testval, poly);
+
+		// if(c >= 1){
+		// 	printf("array for c = %d: ",c);
+		// 	for(int term = testval; term >= 0; term--){
+		// 		printf("%lld x^%d + ", poly[term], term);
+		// 	}
+		// 	printf("\n");
+		// }
 
 		// next we need to do polynumial division (modular)
 
 		// 	if (X + c)^testval != X^testval + c (mod X^r - 1, testval) 
 		//		return 0;
-		free(poly);
+		// free(poly);
 	}
 
 
