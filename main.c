@@ -5,7 +5,7 @@
 #include "aks.h"
 
 int main(int argc, char* argv[]){
-	int testval = 31;
+	int testval = 105;
 	
 	int isprime = aks_prime(testval);
 	

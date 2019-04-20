@@ -170,7 +170,7 @@ int aks_prime(int testval){
 	for( ; a > 1; a--){
 		int g = GCD(testval, a);
 		if(g > 1 &&  g < testval){
-			printf("Input value %d is divisible by value %d and 2 <= %d <= min(r, testval-1), so %d is composite\n", testval, a, a, testval);
+			printf("Input value %d shares GCD %d with value %d and 2 <= %d <= min(r, testval-1), so %d is composite\n", testval, g, a, a, testval);
 
 			// return composite
 			return 0;
@@ -188,16 +188,18 @@ int aks_prime(int testval){
 
 	printf("Input value %d is not less than or equal to r value of %d\n", testval, r);	
 
+	printf("Testing input value %d for the polynomial remainder property\n", testval);
 	int polymax = (int) floor(sqrt(phi(r)) * log2(testval));
 	for(int c = 1; c <= polymax; c++){
 		double polymod = (pow(c,testval) - c) / (double)testval;
-		printf("c=%d, %d^%d=%f...... final modulus=%f\n", c, c, testval, pow(c,testval), polymod);
+		//printf("c=%d, %d^%d=%f...... final modulus=%f\n", c, c, testval, pow(c,testval), polymod);
 		if(polymod != floor(polymod)){
+			printf("Found a constant c = %d where the polynomial remainder property does not satisfy, therefore test value %d is composite\n", c, testval);
 			// return composite
 			return 0;
 		}
 
-		
+
 		// long long* poly;
 		// poly = calloc(testval + 1, sizeof(long long));
 		// we need to raise (X + c) to the testval power
@@ -218,7 +220,7 @@ int aks_prime(int testval){
 		// free(poly);
 	}
 
-
+	printf("Input value %d satisfied all tests, therefore it is prime\n", testval);
 	// return prime
 	return 1;
 }
