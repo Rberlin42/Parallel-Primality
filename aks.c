@@ -3,12 +3,61 @@
 #include <math.h>
 #include "aks.h"
 
+/*
+potential struct we could use for the polynomial, 
+but it would be tough to parallelize the coef array
+typedef struct{
+	int[] coef;
+	int degree;
+} poly;
+*/
 
-int phi(unsigned int n) 
-{ 
+
+long long factorial(int n){
+    long long f=1;
+
+    if(n < 0){
+       	return -1;
+    }
+
+    for(int i=1; i <= n; i++){
+        f=f*i;
+    }
+    
+    return f;
+}
+
+
+int nCr(int n, int r){
+	// Base Cases  
+    if (r == 0 || r == n)  
+        return 1;  
+  
+    // Recur  
+    return nCr(n - 1, r - 1) +  
+                nCr(n - 1, r);
+}
+
+
+void polyPower(int c, int power, long long* poly){
+	for(int k = 0; k <= power; k++){
+		// coef = C(power, k)
+		int pCk = nCr(power, k);
+		long long pwrs = pow(c, k);
+		
+		printf("ncr=%d, pow=%lld\n", pCk, pwrs);
+		long long coef = pCk * pwrs;
+		//int coef = nCr(power, k) * pow(c, k);
+
+		int term = power - k;
+		poly[term] = coef;
+	}
+}
+
+int phi(unsigned int n){ 
     unsigned int result = 1; 
     for (int i = 2; i < n; i++) 
-        if (gcd(i, n) == 1) 
+        if (GCD(i, n) == 1) 
             result++; 
     return result; 
 } 
@@ -24,8 +73,7 @@ int ord(int a, int n){
     unsigned int result = 1; 
   
     int k = 1; 
-    while (k < n) 
-    {  
+    while (k < n){  
         result = (result * a) % n ; 
  
         if (result == 1) 
@@ -140,9 +188,27 @@ int aks_prime(int testval){
 
 	printf("Input value %d is not less than or equal to r value of %d\n", testval, r);	
 
+	int polymax = (int) floor(sqrt(phi(r)) * log2(testval));
+	for(int c = 1; c <= polymax; c++){
+		long long* poly;
+		poly = calloc(testval + 1, sizeof(long long));
+		// we need to raise (X + c) to the testval power
+		polyPower(c, testval, poly);
 
-	// time for the last part using polynomials
+		if(c >= 1){
+			printf("array for c = %d: ",c);
+			for(int term = testval; term >= 0; term--){
+				printf("%lld x^%d + ", poly[term], term);
+			}
+			printf("\n");
+		}
 
+		// next we need to do polynumial division (modular)
+
+		// 	if (X + c)^testval != X^testval + c (mod X^r - 1, testval) 
+		//		return 0;
+		free(poly);
+	}
 
 
 	// return prime

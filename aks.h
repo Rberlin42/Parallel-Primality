@@ -2,6 +2,27 @@
 #define AKS_H
 
 
+
+/**
+ * calculates the factorial of n, n must be >= 0
+ *
+ */
+long long factorial(int n);
+
+/**
+ * calculates the combination of nCr
+ *
+ */
+int nCr(int n, int r);
+
+/**
+ * raise (X + c) to a given power, stores it in the array poly
+ * inputs: constant c, power to raise to, and polynomial array
+ *		requires: the size of poly must be (power+1)
+ */
+void polyPower(int c, int power, long long* poly);
+
+
 /**
  * calculates the Euler phi of a given number
  * this is used during the AKS primality test
