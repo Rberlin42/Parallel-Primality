@@ -191,9 +191,14 @@ int aks_prime(int testval){
 	printf("Testing input value %d for the polynomial remainder property\n", testval);
 	int polymax = (int) floor(sqrt(phi(r)) * log2(testval));
 	for(int c = 1; c <= polymax; c++){
-		double polymod = (pow(c,testval) - c) / (double)testval;
+		long double polymod = (powl(c,testval) - c) / (long double)testval;
+		//printf("%Lf\n", powl(c,testval));
+		if(isinf(powl(c,testval))){
+			printf("overflow on powers for test input %d\n", testval);
+			exit(1);
+		}
 		//printf("c=%d, %d^%d=%f...... final modulus=%f\n", c, c, testval, pow(c,testval), polymod);
-		if(polymod != floor(polymod)){
+		if(polymod != floorl(polymod)){
 			printf("Found a constant c = %d where the polynomial remainder property does not satisfy, therefore test value %d is composite\n", c, testval);
 			// return composite
 			return 0;

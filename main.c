@@ -5,17 +5,34 @@
 #include "aks.h"
 
 int main(int argc, char* argv[]){
-	int testval = 105;
-	
-	int isprime = aks_prime(testval);
-	
-	if(isprime){
-		printf("AKS test ran on %d, found to be prime\n", testval);
+	int maxtest = 1;
+	if(maxtest){
+		int testval = 2;
+		while(testval < 2311){
+		
+			int isprime = aks_prime(testval);
+			
+			if(isprime){
+				printf("AKS test ran on %d, found to be prime\n", testval);
+			}
+			else{
+				printf("AKS test ran on %d, found to be composite\n", testval);
+			}
+
+			testval++;
+		}
 	}
 	else{
-		printf("AKS test ran on %d, found to be composite\n", testval);
+		int testval = 2;
+		int isprime = aks_prime(testval);
+			
+		if(isprime){
+			printf("AKS test ran on %d, found to be prime\n", testval);
+		}
+		else{
+			printf("AKS test ran on %d, found to be composite\n", testval);
+		}
+
 	}
-
-
 	return 0;
 }
