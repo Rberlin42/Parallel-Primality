@@ -2,26 +2,11 @@
 #define AKS_H
 
 
-
 /**
- * calculates the factorial of n, n must be >= 0
+ * calculates a power mod a number, this prevents overflow
  *
  */
-long long factorial(int n);
-
-/**
- * calculates the combination of nCr
- *
- */
-int nCr(int n, int r);
-
-/**
- * raise (X + c) to a given power, stores it in the array poly
- * inputs: constant c, power to raise to, and polynomial array
- *		requires: the size of poly must be (power+1)
- */
-void polyPower(int c, int power, long long* poly);
-
+unsigned long long int mod_power(unsigned long long int base, unsigned long long int exp, unsigned long long int mod);
 
 /**
  * calculates the Euler phi of a given number
@@ -60,6 +45,6 @@ int is_whole(double x);
  * output: 1 if the input is prime, 0 if the input is composite
  *
  */
-int aks_prime(int testval);
+int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm);
 
 #endif

@@ -1,57 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <mpi.h>
+#include <unistd.h>
+
 #include "aks.h"
 
-/*
-potential struct we could use for the polynomial, 
-but it would be tough to parallelize the coef array
-typedef struct{
-	int[] coef;
-	int degree;
-} poly;
-*/
+// modular exponentiation
+// base^exp % mod
+unsigned long long int mod_power(unsigned long long int base, unsigned long long int exp, unsigned long long int mod){
+    if(exp == 0)
+        return 1;
 
+    unsigned long long int z = mod_power(base, exp/2, mod);
 
-long long factorial(int n){
-    long long f=1;
-
-    if(n < 0){
-       	return -1;
-    }
-
-    for(int i=1; i <= n; i++){
-        f=f*i;
-    }
-    
-    return f;
-}
-
-
-int nCr(int n, int r){
-	// Base Cases  
-    if (r == 0 || r == n)  
-        return 1;  
-  
-    // Recur  
-    return nCr(n - 1, r - 1) +  
-                nCr(n - 1, r);
-}
-
-
-void polyPower(int c, int power, long long* poly){
-	for(int k = 0; k <= power; k++){
-		// coef = C(power, k)
-		int pCk = nCr(power, k);
-		long long pwrs = pow(c, k);
-		
-		printf("ncr=%d, pow=%lld\n", pCk, pwrs);
-		long long coef = pCk * pwrs;
-		//int coef = nCr(power, k) * pow(c, k);
-
-		int term = power - k;
-		poly[term] = coef;
-	}
+    //utilize following property to compute large numbers:
+    // (a*b) mod n = ((a mod n) * (b mod n)) mod n
+    if(exp % 2 == 0)
+        // z^2 % mod
+        return ((z % mod) * (z % mod)) % mod;
+    else
+        // (base * z^2) % mod
+        return ((base % mod) * (((z % mod) * (z % mod)) % mod)) % mod;
 }
 
 int phi(unsigned int n){ 
@@ -100,7 +70,7 @@ int is_whole(double x){
 	return (floor(x) == ceil(x));
 }
 
-int aks_prime(int testval){
+int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm){
 	// make sure the input is valid
 	if(testval <= 1){
 		fprintf(stderr, "input number is not valid, must be strictly greater than 1\n");
@@ -168,6 +138,7 @@ int aks_prime(int testval){
 	}
 
 	for( ; a > 1; a--){
+		
 		int g = GCD(testval, a);
 		if(g > 1 &&  g < testval){
 			printf("Input value %d shares GCD %d with value %d and 2 <= %d <= min(r, testval-1), so %d is composite\n", testval, g, a, a, testval);
@@ -175,6 +146,10 @@ int aks_prime(int testval){
 			// return composite
 			return 0;
 		}
+		/*
+		if(testval % a == 0){
+			return 0;
+		}*/
 	}
 
 	printf("Did not find value a where 2 <= a <= min(r, testval-1) that divides input value %d\n", testval);
@@ -190,39 +165,18 @@ int aks_prime(int testval){
 
 	printf("Testing input value %d for the polynomial remainder property\n", testval);
 	int polymax = (int) floor(sqrt(phi(r)) * log2(testval));
+	printf("%d\n",polymax);
 	for(int c = 1; c <= polymax; c++){
-		long double polymod = (powl(c,testval) - c) / (long double)testval;
-		//printf("%Lf\n", powl(c,testval));
-		if(isinf(powl(c,testval))){
-			printf("overflow on powers for test input %d\n", testval);
-			exit(1);
-		}
-		//printf("c=%d, %d^%d=%f...... final modulus=%f\n", c, c, testval, pow(c,testval), polymod);
-		if(polymod != floorl(polymod)){
+
+		long double polymod = mod_power(c, testval, testval) - c;
+		
+		
+		if(polymod != 0){
 			printf("Found a constant c = %d where the polynomial remainder property does not satisfy, therefore test value %d is composite\n", c, testval);
 			// return composite
 			return 0;
 		}
 
-
-		// long long* poly;
-		// poly = calloc(testval + 1, sizeof(long long));
-		// we need to raise (X + c) to the testval power
-		// polyPower(c, testval, poly);
-
-		// if(c >= 1){
-		// 	printf("array for c = %d: ",c);
-		// 	for(int term = testval; term >= 0; term--){
-		// 		printf("%lld x^%d + ", poly[term], term);
-		// 	}
-		// 	printf("\n");
-		// }
-
-		// next we need to do polynumial division (modular)
-
-		// 	if (X + c)^testval != X^testval + c (mod X^r - 1, testval) 
-		//		return 0;
-		// free(poly);
 	}
 
 	printf("Input value %d satisfied all tests, therefore it is prime\n", testval);
