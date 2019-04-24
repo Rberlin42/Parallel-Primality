@@ -3,8 +3,27 @@
 #include <math.h>
 #include <mpi.h>
 #include <unistd.h>
-
 #include "aks.h"
+
+#define BGQ 1 // when running BG/Q, comment out when testing on mastiff
+
+#ifdef BGQ
+#include<hwi/include/bqc/A2_inlines.h>
+#else
+#define GetTimeBase MPI_Wtime
+#endif
+
+
+double g_time_in_secs = 0;
+double g_processor_frequency = 1600000000.0; // processing speed for BG/Q
+#ifdef BGQ
+    unsigned long long g_start_cycles=0;
+    unsigned long long g_end_cycles=0;
+#else
+    double g_start_cycles;
+    double g_end_cycles;
+#endif
+
 
 // modular exponentiation
 // base^exp % mod
@@ -23,6 +42,7 @@ unsigned long long int mod_power(unsigned long long int base, unsigned long long
         // (base * z^2) % mod
         return ((base % mod) * (((z % mod) * (z % mod)) % mod)) % mod;
 }
+
 
 int phi(unsigned int n){ 
     unsigned int result = 1; 
@@ -44,7 +64,7 @@ int ord(int a, int n){
   
     int k = 1; 
     while (k < n){  
-        result = (result * a) % n ; 
+        result = (result * a) % n; 
  
         if (result == 1) 
             return k; 
@@ -62,13 +82,15 @@ int GCD(int a, int b)
     	return a; 
     }
     else{
-      	return GCD(b, a % b) ; 
+      	return GCD(b, a % b); 
     }
 } 
+
 
 int is_whole(double x){
 	return (floor(x) == ceil(x));
 }
+
 
 int aks_prime(int testval){
 	// make sure the input is valid
@@ -114,7 +136,6 @@ int aks_prime(int testval){
 	// tells us when to stop counting
 	int nextR = 1;
 	// increment r by one each time
-	//int values_per_rank = (maxr - 2) / mpi_ranks;
 	for(r = 2; nextR && r < maxr; r++){
 		// make sure the multiplicative order is greater than the log squared
 		// (ord also checks if testval and r are coprime,and returns -1 if they aren't)
@@ -147,10 +168,7 @@ int aks_prime(int testval){
 			// return composite
 			return 0;
 		}
-		/*
-		if(testval % a == 0){
-			return 0;
-		}*/
+
 	}
 
 	printf("Did not find value a where 2 <= a <= min(r, testval-1) that divides input value %d\n", testval);
@@ -195,7 +213,7 @@ int main(int argc, char* argv[]){
 	MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
 	int bil = pow(2,30);
-	// int bil = 8;
+
 	// mpi_size should always be a power of 2, so this should always be a whole number
 	int values_per_rank = (bil) / mpi_size;
 
@@ -213,6 +231,10 @@ int main(int argc, char* argv[]){
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	int num_primes = 0;
+	
+	// calculate starting time
+    if(mpi_rank == 0)
+        g_start_cycles = GetTimeBase();
 
 	for(int testval = starting_value; testval > ending_value; testval--){
 		int isprime = aks_prime(testval);
@@ -223,7 +245,7 @@ int main(int argc, char* argv[]){
 
 	// wait for all the ranks to finish. Once done we will combine the results
 	MPI_Barrier(MPI_COMM_WORLD);
-
+	
 	int* total_primes;
 
 	if(mpi_rank == 0){
@@ -251,9 +273,21 @@ int main(int argc, char* argv[]){
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
+	// calculate ending time
 	if(mpi_rank == 0){
-		printf("Total Number of primes less than 2^30: %d\n", *total_primes);
-	}
+        g_end_cycles = GetTimeBase();
+        #ifdef BGQ
+            g_time_in_secs = ((double)(g_end_cycles - g_start_cycles)) / g_processor_frequency;
+        #else
+            g_time_in_secs = (g_end_cycles - g_start_cycles);
+        #endif
+        
+        printf("Num Ranks: %d\n", mpi_size);
+        printf("Num Primes: %d\n", *total_primes);
+        printf("TIME: %f\n", g_time_in_secs);
+        free(total_primes);
+    }
+
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	return 0;
@@ -295,6 +329,6 @@ int main(int argc, char* argv[]){
 		}
 
 	}
-	*/
 	return 0;
+	*/
 }
