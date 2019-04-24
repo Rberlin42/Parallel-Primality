@@ -45,6 +45,6 @@ int is_whole(double x);
  * output: 1 if the input is prime, 0 if the input is composite
  *
  */
-int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm);
+int aks_prime(int testval);
 
 #endif
