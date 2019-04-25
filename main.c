@@ -21,7 +21,7 @@ int main(int argc, char* argv[]){
 
 		while(testval < powl(2,30)){
 		
-			int isprime = aks_prime(testval, mpi_size, mpi_rank, MPI_COMM_WORLD);
+			int isprime = aks_prime(testval);
 			MPI_Barrier(MPI_COMM_WORLD);
 			if(mpi_rank == 0){
 				if(isprime){
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]){
 	}
 	else{
 		int testval = 31;
-		int isprime = aks_prime(testval, mpi_size, mpi_rank, MPI_COMM_WORLD);
+		int isprime = aks_prime(testval);
 		if(mpi_rank == 0){
 			if(isprime){
 				printf("AKS test ran on %d, found to be prime\n", testval);

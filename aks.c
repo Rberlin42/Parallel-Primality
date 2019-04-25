@@ -3,8 +3,27 @@
 #include <math.h>
 #include <mpi.h>
 #include <unistd.h>
-
 #include "aks.h"
+
+#define BGQ 1 // when running BG/Q, comment out when testing on mastiff
+
+#ifdef BGQ
+#include<hwi/include/bqc/A2_inlines.h>
+#else
+#define GetTimeBase MPI_Wtime
+#endif
+
+
+double g_time_in_secs = 0;
+double g_processor_frequency = 1600000000.0; // processing speed for BG/Q
+#ifdef BGQ
+    unsigned long long g_start_cycles=0;
+    unsigned long long g_end_cycles=0;
+#else
+    double g_start_cycles;
+    double g_end_cycles;
+#endif
+
 
 // modular exponentiation
 // base^exp % mod
@@ -23,6 +42,7 @@ unsigned long long int mod_power(unsigned long long int base, unsigned long long
         // (base * z^2) % mod
         return ((base % mod) * (((z % mod) * (z % mod)) % mod)) % mod;
 }
+
 
 int phi(unsigned int n){ 
     unsigned int result = 1; 
@@ -44,7 +64,7 @@ int ord(int a, int n){
   
     int k = 1; 
     while (k < n){  
-        result = (result * a) % n ; 
+        result = (result * a) % n; 
  
         if (result == 1) 
             return k; 
@@ -62,15 +82,17 @@ int GCD(int a, int b)
     	return a; 
     }
     else{
-      	return GCD(b, a % b) ; 
+      	return GCD(b, a % b); 
     }
 } 
+
 
 int is_whole(double x){
 	return (floor(x) == ceil(x));
 }
 
-int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm){
+
+int aks_prime(int testval){
 	// make sure the input is valid
 	if(testval <= 1){
 		fprintf(stderr, "input number is not valid, must be strictly greater than 1\n");
@@ -146,10 +168,7 @@ int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm){
 			// return composite
 			return 0;
 		}
-		/*
-		if(testval % a == 0){
-			return 0;
-		}*/
+
 	}
 
 	printf("Did not find value a where 2 <= a <= min(r, testval-1) that divides input value %d\n", testval);
@@ -165,7 +184,7 @@ int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm){
 
 	printf("Testing input value %d for the polynomial remainder property\n", testval);
 	int polymax = (int) floor(sqrt(phi(r)) * log2(testval));
-	printf("%d\n",polymax);
+
 	for(int c = 1; c <= polymax; c++){
 
 		long double polymod = mod_power(c, testval, testval) - c;
@@ -182,4 +201,134 @@ int aks_prime(int testval, int mpi_size, int mpi_rank, MPI_Comm comm){
 	printf("Input value %d satisfied all tests, therefore it is prime\n", testval);
 	// return prime
 	return 1;
+}
+
+
+int main(int argc, char* argv[]){
+	int mpi_rank = -1;
+	int mpi_size = -1;
+
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+	MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+	int bil = pow(2,30);
+
+	// mpi_size should always be a power of 2, so this should always be a whole number
+	int values_per_rank = (bil) / mpi_size;
+
+	// how many off from 2^30 to begin on this rank
+	int rank_offset = values_per_rank * mpi_rank;
+
+	int starting_value = bil - rank_offset;
+	int ending_value = starting_value - values_per_rank;
+
+	// the math will make the highest rank always stop at 0, but we need to stop at 1
+	if(ending_value < 1){
+		ending_value = 1;
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	int num_primes = 0;
+	
+	// calculate starting time
+    if(mpi_rank == 0)
+        g_start_cycles = GetTimeBase();
+
+	for(int testval = starting_value; testval > ending_value; testval--){
+		int isprime = aks_prime(testval);
+		if(isprime){
+			num_primes++;
+		}
+	}
+
+	// wait for all the ranks to finish. Once done we will combine the results
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	int* total_primes;
+
+	if(mpi_rank == 0){
+		total_primes = calloc(1, sizeof(int));
+		MPI_Reduce(
+			&num_primes,
+			total_primes,
+			1,
+			MPI_INT,
+			MPI_SUM,
+			0,
+			MPI_COMM_WORLD
+		);
+	}
+	else{
+		MPI_Reduce(
+			&num_primes,
+			NULL,
+			1,
+			MPI_INT,
+			MPI_SUM,
+			0,
+			MPI_COMM_WORLD
+		);
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	// calculate ending time
+	if(mpi_rank == 0){
+        g_end_cycles = GetTimeBase();
+        #ifdef BGQ
+            g_time_in_secs = ((double)(g_end_cycles - g_start_cycles)) / g_processor_frequency;
+        #else
+            g_time_in_secs = (g_end_cycles - g_start_cycles);
+        #endif
+        
+        printf("Num Ranks: %d\n", mpi_size);
+        printf("Num Primes: %d\n", *total_primes);
+        printf("TIME: %f\n", g_time_in_secs);
+        free(total_primes);
+    }
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	return 0;
+
+	/*
+	int count_primes = 1;
+	if(count_primes){
+		int testval = pow(2,30);
+		int num_prime = 0;
+		while(testval > 1){
+		
+			int isprime = aks_prime(testval);
+			MPI_Barrier(MPI_COMM_WORLD);
+			if(mpi_rank == 0){
+				if(isprime){
+					printf("AKS test ran on %d, found to be prime\n\n", testval);
+					num_prime++;
+				}
+				else{
+					printf("AKS test ran on %d, found to be composite\n\n", testval);
+
+				}
+			}
+
+			testval--;
+		}
+		printf("Testing complete for number of primes less than 2^30.\nThere were %d primes.\n", num_prime);
+	}
+	else{
+		int testval = 2147483647;
+		int isprime = aks_prime(testval);
+		if(mpi_rank == 0){
+			if(isprime){
+				printf("AKS test ran on %d, found to be prime\n", testval);
+			}
+			else{
+				printf("AKS test ran on %d, found to be composite\n", testval);
+			}
+		}
+
+	}
+	return 0;
+	*/
 }
