@@ -219,8 +219,7 @@ int main(int argc, char* argv[]){
 
 	int input_size;
 	if (strong_scaling){
-		//input_size = pow(2, 30);
-		input_size = pow(2,15);
+		input_size = pow(2, 30);
 	}
 	else{
 		input_size = pow(2, p2);
