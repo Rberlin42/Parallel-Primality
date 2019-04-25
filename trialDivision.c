@@ -21,61 +21,69 @@ double g_processor_frequency = 1600000000.0; // processing speed for BG/Q
 #endif
 
 typedef unsigned long long ull;
-ull upTo = 1073741824;
-ull factors = 0;
-ull totPrimes = 0;
 
-//attempt division for each number in range of lower to upper
-void trialDivision(ull lower, ull upper, ull prime) {
-  for(ull i = lower + 1; i <= upper; ++i) {
-    if(prime % i == 0) {
-      ++factors;
+int mpi_myrank;
+int mpi_commsize;
+
+ull globalPCount = 0;
+ull localPCount = 0;
+ull cutOff = 0;
+
+//Trial Division
+void trialDivision(ull p) {
+    cutOff = (ull) sqrt(p);
+    for(ull n = 2; n <= cutOff; ++n) {
+        if(p % n == 0) { //If factor other than 1 and itself then return. For improved runtime
+            return;
+        }
     }
-  }
+    //increment if prime
+    ++localPCount;    
 }
 
 int main(int argc, char** argv) {
 
-  int mpi_myrank;
-  int mpi_commsize;
-  ull loopTo;
-  ull offset;
+    ull offset, lower, upper;
+    ull primes = 541;
 
-  MPI_Init( &argc, &argv);
-  MPI_Comm_size( MPI_COMM_WORLD, &mpi_commsize);
-  MPI_Comm_rank( MPI_COMM_WORLD, &mpi_myrank);
+    MPI_Init( &argc, &argv);
+    MPI_Comm_size( MPI_COMM_WORLD, &mpi_commsize);
+    MPI_Comm_rank( MPI_COMM_WORLD, &mpi_myrank);
 
-  for(ull i = 1; i <= upTo; ++i) {
-    loopTo = (ull) sqrt(i);
-    offset = loopTo / mpi_commsize;
+    offset = primes / mpi_commsize;
 
-    if(mpi_myrank == 0)
-      g_start_cycles = GetTimeBase();
+    //Special case where we 
+    if(mpi_myrank == 0) {
+        g_start_cycles = GetTimeBase();
+        lower = 1;
+    } else {
+        lower = mpi_myrank * offset;
+    }
 
     if(mpi_myrank == mpi_commsize - 1) {
-      trialDivision(offset * mpi_myrank + 1, loopTo, i);
+        upper = primes;
     } else {
-        trialDivision(offset * mpi_myrank + 1, offset * mpi_myrank + offset, i);
+        upper = mpi_myrank * offset + offset;
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    for(ull p = lower + 1; p <= upper; ++p) {
+        trialDivision(p);
+    }
+
+    MPI_Reduce(&localPCount, &globalPCount, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
     if(mpi_myrank == 0) {
-      if(factors == 0) {
-        ++totPrimes;
-      } 
-    }
-    factors = 0;
-  }
+        printf("%llu\n", globalPCount);
+        
+        g_end_cycles = GetTimeBase();
+        #ifdef BGQ
+            g_time_in_secs = ((double)(g_end_cycles - g_start_cycles)) / g_processor_frequency;
+        #else
+            g_time_in_secs = (g_end_cycles - g_start_cycles);
+        #endif
+        printf("TIME: %f\n", g_time_in_secs);    
+    }    
 
-  if(mpi_myrank == 0) {
-    printf("%llu\n", totPrimes);
-    g_end_cycles = GetTimeBase();
-    #ifdef BGQ
-        g_time_in_secs = ((double)(g_end_cycles - g_start_cycles)) / g_processor_frequency;
-    #else
-        g_time_in_secs = (g_end_cycles - g_start_cycles);
-    #endif
-    printf("TIME: %f\n", g_time_in_secs);
-  }
-
+    MPI_Finalize();
+    return 0;
 }
