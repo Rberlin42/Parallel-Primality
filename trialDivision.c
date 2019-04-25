@@ -44,7 +44,7 @@ void trialDivision(ull p) {
 int main(int argc, char** argv) {
 
     ull offset, lower, upper;
-    ull primes = 541;
+    ull primes = 4409;
 
     MPI_Init( &argc, &argv);
     MPI_Comm_size( MPI_COMM_WORLD, &mpi_commsize);
@@ -55,18 +55,9 @@ int main(int argc, char** argv) {
     //Special case where we 
     if(mpi_myrank == 0) {
         g_start_cycles = GetTimeBase();
-        lower = 1;
-    } else {
-        lower = mpi_myrank * offset;
-    }
+    } 
 
-    if(mpi_myrank == mpi_commsize - 1) {
-        upper = primes;
-    } else {
-        upper = mpi_myrank * offset + offset;
-    }
-
-    for(ull p = lower + 1; p <= upper; ++p) {
+    for(ull p = mpi_myrank + 1; p < primes; p += mpi_commsize) {
         trialDivision(p);
     }
 
