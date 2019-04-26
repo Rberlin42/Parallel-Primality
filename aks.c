@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "aks.h"
 
-#define BGQ 1 // when running BG/Q, comment out when testing on mastiff
+//#define BGQ 1 // when running BG/Q, comment out when testing on mastiff
 
 #ifdef BGQ
 #include<hwi/include/bqc/A2_inlines.h>
@@ -215,27 +215,19 @@ int main(int argc, char* argv[]){
 
 	// for weak scaling, the power of 2 goes up by 1 every time we double the ranks
 	int nodes = mpi_size / 64;
-	int p2 = 30 + log2(nodes);
+	int p2 = 15 + log2(nodes);
 
 	int input_size;
 	if (strong_scaling){
-		input_size = pow(2, 30);
+		input_size = pow(2, 22);
 	}
 	else{
 		input_size = pow(2, p2);
 	}
 
-	// mpi_size should always be a power of 2, so this should always be a whole number
-	int values_per_rank = (input_size) / mpi_size;
-
-	// how many off from 2^30 to begin on this rank
-	int rank_offset = values_per_rank * mpi_rank;
-
-	// the math will make the highest rank always stop at 0, but we need to stop at 1
-	if(ending_value < 1){
-		ending_value = 1;
+	if(mpi_rank == 0){
+		printf("Begin MPI prime counter with %d ranks, and a limit of %d\n", mpi_size, input_size);
 	}
-
 
 	int num_primes = 0;
 	
@@ -248,7 +240,7 @@ int main(int argc, char* argv[]){
 
 
     int isprime;
-	for(int testval = 2 + rank_offset; testval <= input_size; testval += mpi_size){
+	for(int testval = 2 + mpi_rank; testval <= input_size; testval += mpi_size){
 		isprime = aks_prime(testval);
 		if(isprime){
 			num_primes++; 
@@ -256,7 +248,7 @@ int main(int argc, char* argv[]){
 	}
 
 	// wait for all the ranks to finish. Once done we will combine the results
-	// MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
 	
 	int* total_primes;
 
