@@ -25,13 +25,15 @@ typedef unsigned long long ull;
 int mpi_myrank;
 int mpi_commsize;
 
+//For adding up primes
 ull globalPCount = 0;
 ull localPCount = 0;
+
 ull cutOff = 0;
 
 //Trial Division
 void trialDivision(ull p) {
-    cutOff = (ull) sqrt(p);
+    cutOff = (ull) sqrt(p); // cutoff for how many numbers below p need to be tested
     for(ull n = 2; n <= cutOff; ++n) {
         if(p % n == 0) { //If factor other than 1 and itself then return. For improved runtime
             return;
@@ -43,28 +45,29 @@ void trialDivision(ull p) {
 
 int main(int argc, char** argv) {
 
-    ull offset, lower, upper;
+    //CHANGE THIS TO CHANGE HOW MANY NUMBERS TO TEST PRIMALITY FOR
     ull primes = 4409;
 
     MPI_Init( &argc, &argv);
     MPI_Comm_size( MPI_COMM_WORLD, &mpi_commsize);
     MPI_Comm_rank( MPI_COMM_WORLD, &mpi_myrank);
 
-    offset = primes / mpi_commsize;
-
-    //Special case where we 
+    //Start the time
     if(mpi_myrank == 0) {
         g_start_cycles = GetTimeBase();
     } 
 
+    //Round Robin to divide up primes to each rank
     for(ull p = mpi_myrank + 1; p < primes; p += mpi_commsize) {
         trialDivision(p);
     }
 
+    //Add up all of the primes from each rank
     MPI_Reduce(&localPCount, &globalPCount, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
+    //Print primes and print time
     if(mpi_myrank == 0) {
-        printf("%llu\n", globalPCount);
+        printf("%llu\n", globalPCount); 
         
         g_end_cycles = GetTimeBase();
         #ifdef BGQ
