@@ -2,8 +2,10 @@
 Parallel Programming Final Project
 
 trialDivision.c: 
-
-
+>> Complile on BG/Q using mpixlc and -lm command.
+>> To edit input size, go into trialDivision.c and on line 49, change the varibale "ull primes" to the input size of your liking
+>> For strong scaling, run using ull primes = 2^30. Run with number of ranks between 64 and 8192 (power of 2 only).
+>> For weak scaling, Adjusts the test size based on the number of ranks. 64 ranks has an input of 2^15, and 8192 ranks has an input size of 2^22. Outputs the number of primes for the input size. 
 miller_rabin.c
 
 
