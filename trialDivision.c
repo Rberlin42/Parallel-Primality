@@ -46,7 +46,7 @@ void trialDivision(ull p) {
 int main(int argc, char** argv) {
 
     //CHANGE THIS TO CHANGE HOW MANY NUMBERS TO TEST PRIMALITY FOR
-    ull primes = 4409;
+    ull primes = 1073741824;
 
     MPI_Init( &argc, &argv);
     MPI_Comm_size( MPI_COMM_WORLD, &mpi_commsize);
